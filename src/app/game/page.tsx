@@ -1,7 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
+
+// Dynamically import Racing3D to avoid SSR issues with Three.js
+const Racing3D = dynamic(() => import("./Racing3D"), { 
+	ssr: false,
+	loading: () => (
+		<div className="flex items-center justify-center h-96">
+			<div className="text-2xl text-pink-500 animate-pulse">Loading 3D Game...</div>
+		</div>
+	)
+});
 
 const REWARDS = [
 	{ emoji: "💎", name: "Diamond", amount: 500000000, color: "bg-cyan-400" },
@@ -38,7 +49,7 @@ const BALL_COLORS = [
 export default function GamePage() {
 	const [money, setMoney] = useState<number>(0);
 	const [userId, setUserId] = useState<string | null>(null);
-	const [gameMode, setGameMode] = useState<"menu" | "wheel" | "memory" | "wordle" | "ballsort">("menu");
+	const [gameMode, setGameMode] = useState<"menu" | "wheel" | "memory" | "wordle" | "ballsort" | "racing">("menu");
 
 	// Wheel game state
 	const [isSpinning, setIsSpinning] = useState(false);
@@ -67,13 +78,20 @@ export default function GamePage() {
 	const [ballSortWon, setBallSortWon] = useState(false);
 	const [ballSortReward, setBallSortReward] = useState<number | null>(null);
 
+	// Racing game high score (game itself is in Racing3D component)
+	const [racingHighScore, setRacingHighScore] = useState(0);
+
 	// Load user data from API
 	useEffect(() => {
 		const loadUserData = async () => {
 			const savedUserId = localStorage.getItem("userId");
 			const savedBallSortLevel = localStorage.getItem("ballSortLevel");
+			const savedRacingHighScore = localStorage.getItem("racingHighScore");
 			if (savedBallSortLevel) {
 				setBallSortLevel(parseInt(savedBallSortLevel));
+			}
+			if (savedRacingHighScore) {
+				setRacingHighScore(parseInt(savedRacingHighScore));
 			}
 			if (savedUserId) {
 				setUserId(savedUserId);
@@ -494,6 +512,34 @@ export default function GamePage() {
 									</div>
 								</div>
 							</button>
+
+							{/* Racing Game */}
+							<button
+								onClick={() => setGameMode("racing")}
+								className="bg-gradient-to-br from-gray-900 to-purple-900 backdrop-blur-sm rounded-3xl p-8 shadow-xl border-4 border-pink-500/50 hover:border-cyan-400/80 hover:scale-105 transition-all duration-300 text-left"
+							>
+								<div className="flex items-center gap-6">
+									<div className="text-6xl">🏎️</div>
+									<div>
+										<h2 className="text-2xl font-bold bg-gradient-to-r from-pink-400 to-cyan-400 bg-clip-text text-transparent mb-2">Neon Rush 3D</h2>
+										<p className="text-purple-300">Race through neon city! Collect coins in stunning 3D!</p>
+										<div className="mt-2 flex items-center gap-3">
+											<span className="px-3 py-1 bg-gradient-to-r from-pink-500 to-cyan-500 text-white text-sm rounded-full font-bold">
+												High Score: {racingHighScore}
+											</span>
+											<span className="text-sm text-pink-400">
+												💰 Score × $1M
+											</span>
+										</div>
+										<div className="mt-2 flex gap-2 text-2xl">
+											<span>🚗</span>
+											<span>💰</span>
+											<span>🛡️</span>
+											<span>🔥</span>
+										</div>
+									</div>
+								</div>
+							</button>
 						</div>
 					</div>
 				)}
@@ -903,6 +949,15 @@ export default function GamePage() {
 							</div>
 						)}
 					</div>
+				)}
+
+				{/* Racing Game - 3D */}
+				{gameMode === "racing" && (
+					<Racing3D
+						onExit={() => setGameMode("menu")}
+						onEarnMoney={(amount) => addMoney(amount)}
+						formatMoney={formatMoney}
+					/>
 				)}
 			</div>
 		</div>
