@@ -12,6 +12,7 @@ function getWeekNumber(date: Date): number {
 export async function GET(request: NextRequest) {
 	try {
 		const userId = request.nextUrl.searchParams.get("userId");
+		const username = request.nextUrl.searchParams.get("username");
 
 		// Get or create user
 		let user = userId
@@ -21,11 +22,29 @@ export async function GET(request: NextRequest) {
 			  })
 			: null;
 
-		if (!user) {
-			user = await prisma.user.create({
-				data: { name: "Player" },
+		// If no user found by ID, try to find or create by username
+		if (!user && username) {
+			// Try to find existing user with this username (unique field)
+			user = await prisma.user.findUnique({
+				where: { username: username },
 				include: { weeks: true },
 			});
+
+			// Create new user if not found
+			if (!user) {
+				user = await prisma.user.create({
+					data: { username: username },
+					include: { weeks: true },
+				});
+			}
+		}
+
+		// If still no user (no username provided), return error
+		if (!user) {
+			return NextResponse.json(
+				{ success: false, error: "Username required" },
+				{ status: 400 }
+			);
 		}
 
 		// Get or create current week
@@ -57,7 +76,7 @@ export async function GET(request: NextRequest) {
 			success: true,
 			user: {
 				id: user.id,
-				name: user.name,
+				username: user.username,
 				money: user.money.toString(), // BigInt to string for JSON
 			},
 			currentWeek: {

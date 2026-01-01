@@ -154,7 +154,7 @@ export default function ADHDPlannerPage() {
   useEffect(() => {
     const saved = localStorage.getItem("adhdPlanner");
     const savedSchedule = localStorage.getItem("adhdSchedule");
-    
+
     // Load custom schedule times (persists across days)
     if (savedSchedule) {
       const schedule = JSON.parse(savedSchedule);
@@ -166,7 +166,7 @@ export default function ADHDPlannerPage() {
         return block;
       }));
     }
-    
+
     // Load today's tasks
     if (saved) {
       const data = JSON.parse(saved);
@@ -244,7 +244,7 @@ export default function ADHDPlannerPage() {
   const addTask = (blockId: string, task?: { text: string; duration: number; category: Task["category"] }) => {
     const taskText = task?.text || newTaskText;
     const taskDuration = task?.duration || newTaskDuration;
-    
+
     if (!taskText.trim()) return;
 
     const newTask: Task = {
@@ -271,7 +271,7 @@ export default function ADHDPlannerPage() {
   const completeTask = (taskId: string) => {
     const updated = timeBlocks.map(block => ({
       ...block,
-      tasks: block.tasks.map(task => 
+      tasks: block.tasks.map(task =>
         task.id === taskId ? { ...task, completed: true } : task
       ),
     }));
@@ -330,14 +330,14 @@ export default function ADHDPlannerPage() {
   // Focus Mode UI
   if (focusMode && focusTask) {
     const progress = ((focusTask.duration * 60 - timerSeconds) / (focusTask.duration * 60)) * 100;
-    
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-rose-100 flex items-center justify-center p-4">
         <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 md:p-12 shadow-2xl max-w-md w-full text-center border-4 border-pink-300">
           <div className="text-6xl mb-4">🎯</div>
           <h2 className="text-2xl font-bold text-purple-600 mb-2">Focus Mode</h2>
           <p className="text-pink-500 mb-6">{focusTask.text}</p>
-          
+
           {/* Timer Circle */}
           <div className="relative w-48 h-48 mx-auto mb-6">
             <svg className="w-full h-full transform -rotate-90">
@@ -376,11 +376,10 @@ export default function ADHDPlannerPage() {
           <div className="flex gap-3 justify-center mb-6">
             <button
               onClick={() => setTimerRunning(!timerRunning)}
-              className={`px-6 py-3 rounded-full font-bold text-white transition-all ${
-                timerRunning 
-                  ? "bg-yellow-500 hover:bg-yellow-600" 
+              className={`px-6 py-3 rounded-full font-bold text-white transition-all ${timerRunning
+                  ? "bg-yellow-500 hover:bg-yellow-600"
                   : "bg-green-500 hover:bg-green-600"
-              }`}
+                }`}
             >
               {timerRunning ? "⏸️ Pause" : "▶️ Resume"}
             </button>
@@ -493,13 +492,12 @@ export default function ADHDPlannerPage() {
             const incompleteTasks = block.tasks.filter(t => !t.completed);
             const completedTasks = block.tasks.filter(t => t.completed);
             const isEditing = editingBlock === block.id;
-            
+
             return (
               <div
                 key={block.id}
-                className={`bg-gradient-to-r ${block.color} rounded-2xl p-4 shadow-lg transition-all ${
-                  isCurrentBlock ? "ring-4 ring-pink-400 scale-[1.02]" : ""
-                }`}
+                className={`bg-gradient-to-r ${block.color} rounded-2xl p-4 shadow-lg transition-all ${isCurrentBlock ? "ring-4 ring-pink-400 scale-[1.02]" : ""
+                  }`}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
@@ -581,7 +579,7 @@ export default function ADHDPlannerPage() {
                       </button>
                     </div>
                   ))}
-                  
+
                   {completedTasks.length > 0 && (
                     <div className="text-sm text-gray-500 pl-2">
                       ✨ {completedTasks.length} task{completedTasks.length > 1 ? "s" : ""} completed

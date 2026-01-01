@@ -13,7 +13,7 @@ datasource db {
 // User model to store user data
 model User {
   id        String   @id @default(cuid())
-  name      String   @default("Player")
+  username  String   @unique // Unique username for login across devices
   email     String?  @unique
   money     BigInt   @default(0)
   createdAt DateTime @default(now())

@@ -136,13 +136,16 @@ export default function Home() {
   const [userId, setUserId] = useState<string | null>(null);
   const [weekId, setWeekId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+
+  // User auth state
+  const [username, setUsername] = useState<string | null>(null);
+  const [loginInput, setLoginInput] = useState("");
+
   // Notification state
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("default");
   const [reminderTimes, setReminderTimes] = useState<string[]>([]);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const [newReminderTime, setNewReminderTime] = useState("09:00");
-  const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
 
   // Register Service Worker and check notification permission on mount
   useEffect(() => {
@@ -151,12 +154,11 @@ export default function Home() {
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").then((registration) => {
           console.log("Service Worker registered:", registration);
-          setSwRegistration(registration);
         }).catch((error) => {
           console.error("Service Worker registration failed:", error);
         });
       }
-      
+
       // Check notification permission
       if ("Notification" in window) {
         setNotificationPermission(Notification.permission);
@@ -213,11 +215,11 @@ export default function Home() {
   // Check for reminder times every minute
   useEffect(() => {
     if (notificationPermission !== "granted" || reminderTimes.length === 0) return;
-    
+
     const checkReminders = () => {
       const now = new Date();
       const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
-      
+
       if (reminderTimes.includes(currentTime)) {
         const todayPills = pills[currentDayIndex];
         if (todayPills > 0) {
@@ -231,24 +233,80 @@ export default function Home() {
 
     // Check immediately
     checkReminders();
-    
+
     // Then check every minute
     const interval = setInterval(checkReminders, 60000);
     return () => clearInterval(interval);
   }, [notificationPermission, reminderTimes, pills, currentDayIndex, showNotification]);
+
+  // Load username from localStorage on mount
+  useEffect(() => {
+    const savedUsername = localStorage.getItem("username");
+    if (savedUsername) {
+      setUsername(savedUsername);
+    }
+  }, []);
+
+  // Handle login
+  const handleLogin = async () => {
+    if (loginInput.trim()) {
+      const name = loginInput.trim();
+      setUsername(name);
+      localStorage.setItem("username", name);
+      setLoginInput("");
+
+      // Load user data from backend with username
+      try {
+        const response = await fetch(`/api/user?username=${encodeURIComponent(name)}`);
+        const data = await response.json();
+        if (data.success) {
+          setUserId(data.user.id);
+          setWeekId(data.currentWeek.id);
+          setMoney(parseInt(data.user.money));
+          setPills(data.currentWeek.pills);
+          localStorage.setItem("userId", data.user.id);
+          localStorage.setItem("healthWealth", data.user.money);
+        }
+      } catch (error) {
+        console.error("Failed to load user data:", error);
+      }
+    }
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    setUsername(null);
+    localStorage.removeItem("username");
+    localStorage.removeItem("userId");
+  };
 
   // Load user data from API
   useEffect(() => {
     const loadUserData = async () => {
       try {
         const savedUserId = localStorage.getItem("userId");
-        const url = savedUserId ? `/api/user?userId=${savedUserId}` : "/api/user";
+        const savedUsername = localStorage.getItem("username");
+
+        // Don't load if no username (will show login modal)
+        if (!savedUsername) {
+          // Clear any stale userId if no username
+          localStorage.removeItem("userId");
+          setIsLoading(false);
+          return;
+        }
+
+        // Always use username as primary identifier (it's unique across devices)
+        const url = `/api/user?username=${encodeURIComponent(savedUsername)}`;
 
         const response = await fetch(url);
 
         // Check if response is ok
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          // If error, clear saved data and show login
+          localStorage.removeItem("userId");
+          localStorage.removeItem("username");
+          setIsLoading(false);
+          return;
         }
 
         const text = await response.text();
@@ -360,6 +418,51 @@ export default function Home() {
     size: 20 + Math.random() * 30,
   }));
 
+  // Show login modal first if not signed in (before loading screen)
+  if (!username && !isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-200 to-rose-200 flex items-center justify-center">
+        {/* Login Modal */}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border-4 border-pink-300">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-pink-600">👋 Hey Bestie!</h2>
+            </div>
+
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">💖</div>
+              <p className="text-gray-600">What should we call you?</p>
+              <p className="text-xs text-gray-400 mt-2">Enter your name to get started!</p>
+            </div>
+
+            <div className="space-y-4">
+              <input
+                type="text"
+                value={loginInput}
+                onChange={e => setLoginInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleLogin()}
+                placeholder="Enter your name..."
+                className="w-full px-4 py-4 rounded-xl border-2 border-pink-300 focus:border-pink-400 focus:outline-none text-lg text-center"
+                autoFocus
+              />
+              <button
+                onClick={handleLogin}
+                disabled={!loginInput.trim()}
+                className="w-full py-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-bold hover:from-pink-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+              >
+                ✨ Let's Go! ✨
+              </button>
+            </div>
+
+            <p className="text-center text-xs text-gray-400 mt-4">
+              No password needed - just vibes 💕
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-200 to-rose-200 flex items-center justify-center">
@@ -436,7 +539,7 @@ export default function Home() {
           </div>
         </Link>
         {/* Notification Settings Button */}
-        <button 
+        <button
           onClick={() => setShowNotificationSettings(true)}
           className="mt-2 w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl px-4 py-3 shadow-lg border-2 border-amber-300 text-center transition-all hover:scale-105 cursor-pointer"
         >
@@ -446,6 +549,23 @@ export default function Home() {
             <span className="ml-2 bg-white/30 px-2 py-0.5 rounded-full text-sm">{reminderTimes.length}</span>
           )}
         </button>
+        {/* User Button */}
+        {username && (
+          <div className="mt-2 bg-white/90 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg border-2 border-pink-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">👤</span>
+                <span className="font-bold text-pink-600 truncate max-w-[100px]">{username}</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Notification Settings Modal */}
@@ -454,7 +574,7 @@ export default function Home() {
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border-4 border-pink-300 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-pink-600">🔔 Pill Reminders</h2>
-              <button 
+              <button
                 onClick={() => setShowNotificationSettings(false)}
                 className="text-gray-400 hover:text-gray-600 text-2xl"
               >
