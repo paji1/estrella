@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User model to store user data
+model User {
+  id        String   @id @default(cuid())
+  name      String   @default("Player")
+  email     String?  @unique
+  money     BigInt   @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  weeks     Week[]
+}
+
+// Weekly pill tracking
+model Week {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekNumber Int // Week of the year
+  year       Int
+  monday     Int      @default(3)
+  tuesday    Int      @default(3)
+  wednesday  Int      @default(3)
+  thursday   Int      @default(3)
+  friday     Int      @default(3)
+  saturday   Int      @default(3)
+  sunday     Int      @default(3)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, weekNumber, year])
+}
