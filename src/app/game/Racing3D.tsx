@@ -32,7 +32,7 @@ interface GameState {
 function Car({ lane, hasShield, hasNitro }: { lane: number; hasShield: boolean; hasNitro: boolean }) {
 	const carRef = useRef<THREE.Group>(null);
 	const targetX = (lane - 1) * 2.5;
-	
+
 	useFrame((_, delta) => {
 		if (carRef.current) {
 			// Smooth lane transition
@@ -104,10 +104,10 @@ function Car({ lane, hasShield, hasNitro }: { lane: number; hasShield: boolean; 
 			{hasShield && (
 				<mesh position={[0, 0.4, 0]}>
 					<sphereGeometry args={[1.5, 32, 32]} />
-					<meshStandardMaterial 
-						color="#00ffff" 
-						transparent 
-						opacity={0.3} 
+					<meshStandardMaterial
+						color="#00ffff"
+						transparent
+						opacity={0.3}
 						emissive="#00ffff"
 						emissiveIntensity={0.5}
 					/>
@@ -133,7 +133,7 @@ function Car({ lane, hasShield, hasNitro }: { lane: number; hasShield: boolean; 
 // Obstacle Car Component
 function ObstacleCar({ position, color }: { position: [number, number, number]; color: string }) {
 	const carRef = useRef<THREE.Group>(null);
-	
+
 	useFrame(() => {
 		if (carRef.current) {
 			carRef.current.rotation.y = Math.sin(Date.now() * 0.001) * 0.05;
@@ -161,7 +161,7 @@ function ObstacleCar({ position, color }: { position: [number, number, number]; 
 // Coin Component
 function Coin({ position }: { position: [number, number, number] }) {
 	const coinRef = useRef<THREE.Mesh>(null);
-	
+
 	useFrame((_, delta) => {
 		if (coinRef.current) {
 			coinRef.current.rotation.y += delta * 3;
@@ -180,7 +180,7 @@ function Coin({ position }: { position: [number, number, number] }) {
 // Diamond Component
 function Diamond({ position }: { position: [number, number, number] }) {
 	const diamondRef = useRef<THREE.Mesh>(null);
-	
+
 	useFrame((_, delta) => {
 		if (diamondRef.current) {
 			diamondRef.current.rotation.y += delta * 2;
@@ -199,7 +199,7 @@ function Diamond({ position }: { position: [number, number, number] }) {
 // Shield Powerup Component
 function ShieldPowerup({ position }: { position: [number, number, number] }) {
 	const shieldRef = useRef<THREE.Mesh>(null);
-	
+
 	useFrame((_, delta) => {
 		if (shieldRef.current) {
 			shieldRef.current.rotation.y += delta * 2;
@@ -218,7 +218,7 @@ function ShieldPowerup({ position }: { position: [number, number, number] }) {
 // Nitro Powerup Component
 function NitroPowerup({ position }: { position: [number, number, number] }) {
 	const nitroRef = useRef<THREE.Mesh>(null);
-	
+
 	useFrame((_, delta) => {
 		if (nitroRef.current) {
 			nitroRef.current.rotation.z += delta * 4;
@@ -243,7 +243,7 @@ function Road({ speed, isPlaying }: { speed: number; isPlaying: boolean }) {
 	useFrame((_, delta) => {
 		if (isPlaying) {
 			offsetRef.current += delta * speed * 5;
-			
+
 			// Animate road lines
 			lineRefs.current.forEach((line, i) => {
 				if (line) {
@@ -261,7 +261,7 @@ function Road({ speed, isPlaying }: { speed: number; isPlaying: boolean }) {
 				<planeGeometry args={[10, 200]} />
 				<meshStandardMaterial color="#ffb6c1" metalness={0.3} roughness={0.5} />
 			</mesh>
-			
+
 			{/* Grass on sides - light green */}
 			<mesh position={[-8, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
 				<planeGeometry args={[6, 200]} />
@@ -271,7 +271,7 @@ function Road({ speed, isPlaying }: { speed: number; isPlaying: boolean }) {
 				<planeGeometry args={[6, 200]} />
 				<meshStandardMaterial color="#90ee90" />
 			</mesh>
-			
+
 			{/* Road edges - hot pink glowing */}
 			<mesh position={[-5, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
 				<planeGeometry args={[0.4, 200]} />
@@ -285,10 +285,10 @@ function Road({ speed, isPlaying }: { speed: number; isPlaying: boolean }) {
 			{/* Lane markers - white hearts pattern would be nice, using white for now */}
 			{[-2.5, 2.5].map((x, xi) => (
 				[...Array(20)].map((_, i) => (
-					<mesh 
+					<mesh
 						key={`${xi}-${i}`}
 						ref={(el) => { if (el) lineRefs.current[xi * 20 + i] = el; }}
-						position={[x, 0.03, i * 4 - 40]} 
+						position={[x, 0.03, i * 4 - 40]}
 						rotation={[-Math.PI / 2, 0, 0]}
 					>
 						<planeGeometry args={[0.2, 2.5]} />
@@ -317,28 +317,28 @@ function Road({ speed, isPlaying }: { speed: number; isPlaying: boolean }) {
 // Background - Cute Barbie Dreamworld
 function Buildings() {
 	const pinkColors = ["#ffb6c1", "#ff69b4", "#ffc0cb", "#dda0dd", "#ee82ee", "#da70d6", "#ff1493"];
-	
+
 	// Pre-compute random values using useMemo
-	const buildingData = useMemo(() => 
+	const buildingData = useMemo(() =>
 		[...Array(20)].map((_, i) => ({
 			height: 4 + (i * 0.37 % 1) * 8,
 			offset: (i * 0.61 % 1) * 4
 		})), []
 	);
-	
-	const treeData = useMemo(() => 
+
+	const treeData = useMemo(() =>
 		[...Array(25)].map((_, i) => ({
 			offset: (i * 0.53 % 1) * 3
 		})), []
 	);
-	
-	const cloudData = useMemo(() => 
+
+	const cloudData = useMemo(() =>
 		[...Array(10)].map((_, i) => ({
 			xOffset: (i * 0.47 % 1) * 15,
 			yOffset: (i * 0.71 % 1) * 10
 		})), []
 	);
-	
+
 	return (
 		<group>
 			{/* Cute houses/castles on sides */}
@@ -417,10 +417,10 @@ function Buildings() {
 }
 
 // Game Scene
-function GameScene({ 
-	gameState, 
-	onCollision 
-}: { 
+function GameScene({
+	gameState,
+	onCollision
+}: {
 	gameState: GameState;
 	onCollision: (type: Obstacle["type"], id: number) => void;
 }) {
@@ -440,10 +440,10 @@ function GameScene({
 
 			gameState.obstacles.forEach(obs => {
 				if (obs.collected) return;
-				
+
 				const obsX = (obs.lane - 1) * 2.5;
 				const obsZ = obs.z;
-				
+
 				// Simple collision detection
 				if (
 					Math.abs(carX - obsX) < 1.2 &&
@@ -466,7 +466,7 @@ function GameScene({
 			<pointLight position={[-5, 8, 10]} intensity={0.5} color="#ff1493" />
 			<pointLight position={[5, 8, 10]} intensity={0.5} color="#ffc0cb" />
 			<hemisphereLight args={["#87ceeb", "#ffb6c1", 0.6]} />
-			
+
 			{/* Sky - Beautiful sunset pink gradient effect */}
 			<mesh position={[0, 50, -50]}>
 				<sphereGeometry args={[120, 32, 32]} />
@@ -533,7 +533,7 @@ export default function Racing3D({ onExit, onEarnMoney, formatMoney }: Racing3DP
 		obstacles: [],
 		reward: null
 	});
-	
+
 	const obstacleIdRef = useRef(0);
 	const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -564,7 +564,7 @@ export default function Racing3D({ onExit, onEarnMoney, formatMoney }: Racing3DP
 
 				// Spawn new obstacles
 				const spawnRate = 0.04 + prev.score / 10000;
-				
+
 				if (Math.random() < spawnRate) {
 					obstacleIdRef.current++;
 					movedObstacles.push({
@@ -653,7 +653,7 @@ export default function Racing3D({ onExit, onEarnMoney, formatMoney }: Racing3DP
 					obstacles: prev.obstacles.map(o => o.id === id ? { ...o, collected: true } : o)
 				};
 			}
-			
+
 			if (type === "diamond") {
 				return {
 					...prev,
@@ -688,11 +688,11 @@ export default function Racing3D({ onExit, onEarnMoney, formatMoney }: Racing3DP
 						obstacles: prev.obstacles.filter(o => o.id !== id)
 					};
 				}
-				
+
 				// Game over
 				const reward = prev.score * 1000000;
 				onEarnMoney(reward);
-				
+
 				const newHighScore = prev.score > prev.highScore ? prev.score : prev.highScore;
 				if (prev.score > prev.highScore) {
 					localStorage.setItem("racing3DHighScore", prev.score.toString());
@@ -765,9 +765,9 @@ export default function Racing3D({ onExit, onEarnMoney, formatMoney }: Racing3DP
 
 	const handleTouchEnd = (e: React.TouchEvent) => {
 		if (touchStartX === null) return;
-		
+
 		const diff = e.changedTouches[0].clientX - touchStartX;
-		
+
 		if (Math.abs(diff) > 30) {
 			if (diff > 0) {
 				setGameState(prev => ({
@@ -781,7 +781,7 @@ export default function Racing3D({ onExit, onEarnMoney, formatMoney }: Racing3DP
 				}));
 			}
 		}
-		
+
 		setTouchStartX(null);
 	};
 
@@ -856,9 +856,9 @@ export default function Racing3D({ onExit, onEarnMoney, formatMoney }: Racing3DP
 			</div>
 
 			{/* 3D Canvas */}
-			<div 
+			<div
 				className="relative mx-auto rounded-2xl overflow-hidden shadow-2xl"
-				style={{ 
+				style={{
 					width: "100%",
 					maxWidth: "500px",
 					height: "400px",
@@ -869,7 +869,7 @@ export default function Racing3D({ onExit, onEarnMoney, formatMoney }: Racing3DP
 			>
 				<Canvas>
 					<Suspense fallback={null}>
-						<GameScene 
+						<GameScene
 							gameState={gameState}
 							onCollision={handleCollision}
 						/>

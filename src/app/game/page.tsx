@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 
 // Dynamically import Racing3D to avoid SSR issues with Three.js
-const Racing3D = dynamic(() => import("./Racing3D"), { 
+const Racing3D = dynamic(() => import("./Racing3D"), {
 	ssr: false,
 	loading: () => (
 		<div className="flex items-center justify-center h-96">
@@ -608,8 +608,8 @@ export default function GamePage() {
 							onClick={spinWheel}
 							disabled={isSpinning}
 							className={`px-12 py-4 rounded-full text-xl font-bold text-white shadow-xl transition-all ${isSpinning
-									? "bg-gray-400 cursor-not-allowed"
-									: "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:scale-105"
+								? "bg-gray-400 cursor-not-allowed"
+								: "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:scale-105"
 								}`}
 						>
 							{isSpinning ? "Spinning... 🎡" : "SPIN! 🎰"}
@@ -646,8 +646,8 @@ export default function GamePage() {
 									key={card.id}
 									onClick={() => flipCard(card.id)}
 									className={`aspect-square rounded-xl text-4xl flex items-center justify-center transition-all duration-300 transform ${card.flipped || card.matched
-											? "bg-white border-4 border-pink-400 rotate-0"
-											: "bg-gradient-to-br from-pink-400 to-purple-400 border-4 border-pink-300 hover:scale-105"
+										? "bg-white border-4 border-pink-400 rotate-0"
+										: "bg-gradient-to-br from-pink-400 to-purple-400 border-4 border-pink-300 hover:scale-105"
 										} ${card.matched ? "opacity-50" : ""}`}
 									disabled={card.matched}
 								>
