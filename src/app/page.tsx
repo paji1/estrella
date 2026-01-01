@@ -136,6 +136,106 @@ export default function Home() {
   const [userId, setUserId] = useState<string | null>(null);
   const [weekId, setWeekId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Notification state
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [reminderTimes, setReminderTimes] = useState<string[]>([]);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+  const [newReminderTime, setNewReminderTime] = useState("09:00");
+  const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
+
+  // Register Service Worker and check notification permission on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // Register service worker for PWA
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").then((registration) => {
+          console.log("Service Worker registered:", registration);
+          setSwRegistration(registration);
+        }).catch((error) => {
+          console.error("Service Worker registration failed:", error);
+        });
+      }
+      
+      // Check notification permission
+      if ("Notification" in window) {
+        setNotificationPermission(Notification.permission);
+        // Load saved reminder times
+        const saved = localStorage.getItem("reminderTimes");
+        if (saved) {
+          setReminderTimes(JSON.parse(saved));
+        }
+      } else {
+        setNotificationPermission("unsupported");
+      }
+    }
+  }, []);
+
+  // Request notification permission
+  const requestNotificationPermission = async () => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+      return permission === "granted";
+    }
+    return false;
+  };
+
+  // Add reminder time
+  const addReminderTime = () => {
+    if (!reminderTimes.includes(newReminderTime)) {
+      const updated = [...reminderTimes, newReminderTime].sort();
+      setReminderTimes(updated);
+      localStorage.setItem("reminderTimes", JSON.stringify(updated));
+    }
+  };
+
+  // Remove reminder time
+  const removeReminderTime = (time: string) => {
+    const updated = reminderTimes.filter(t => t !== time);
+    setReminderTimes(updated);
+    localStorage.setItem("reminderTimes", JSON.stringify(updated));
+  };
+
+  // Show notification
+  const showNotification = useCallback((title: string, body: string) => {
+    if (notificationPermission === "granted") {
+      new Notification(title, {
+        body,
+        icon: "💊",
+        badge: "💊",
+        tag: "pill-reminder",
+        requireInteraction: true,
+      });
+    }
+  }, [notificationPermission]);
+
+  // Check for reminder times every minute
+  useEffect(() => {
+    if (notificationPermission !== "granted" || reminderTimes.length === 0) return;
+    
+    const checkReminders = () => {
+      const now = new Date();
+      const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+      
+      if (reminderTimes.includes(currentTime)) {
+        const todayPills = pills[currentDayIndex];
+        if (todayPills > 0) {
+          showNotification(
+            "💊 Pill Reminder! 💖",
+            `Time to take your medicine, bestie! You have ${todayPills} pill${todayPills > 1 ? "s" : ""} left today. ✨`
+          );
+        }
+      }
+    };
+
+    // Check immediately
+    checkReminders();
+    
+    // Then check every minute
+    const interval = setInterval(checkReminders, 60000);
+    return () => clearInterval(interval);
+  }, [notificationPermission, reminderTimes, pills, currentDayIndex, showNotification]);
 
   // Load user data from API
   useEffect(() => {
@@ -328,7 +428,132 @@ export default function Home() {
             <span className="ml-2 font-bold">Play Games!</span>
           </div>
         </Link>
+        {/* ADHD Planner Button */}
+        <Link href="/adhd" className="mt-2 block">
+          <div className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white rounded-xl px-4 py-3 shadow-lg border-2 border-cyan-300 text-center transition-all hover:scale-105 cursor-pointer">
+            <span className="text-xl">🧠</span>
+            <span className="ml-2 font-bold">ADHD Planner</span>
+          </div>
+        </Link>
+        {/* Notification Settings Button */}
+        <button 
+          onClick={() => setShowNotificationSettings(true)}
+          className="mt-2 w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl px-4 py-3 shadow-lg border-2 border-amber-300 text-center transition-all hover:scale-105 cursor-pointer"
+        >
+          <span className="text-xl">🔔</span>
+          <span className="ml-2 font-bold">Reminders</span>
+          {reminderTimes.length > 0 && (
+            <span className="ml-2 bg-white/30 px-2 py-0.5 rounded-full text-sm">{reminderTimes.length}</span>
+          )}
+        </button>
       </div>
+
+      {/* Notification Settings Modal */}
+      {showNotificationSettings && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border-4 border-pink-300 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-pink-600">🔔 Pill Reminders</h2>
+              <button 
+                onClick={() => setShowNotificationSettings(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Permission Status */}
+            <div className="mb-6">
+              {notificationPermission === "unsupported" ? (
+                <div className="bg-red-100 text-red-600 rounded-xl p-4 text-sm">
+                  <span className="font-bold">😢 Not Supported</span>
+                  <p className="mt-1">Your browser doesn't support notifications. Try using Chrome or Safari!</p>
+                </div>
+              ) : notificationPermission === "granted" ? (
+                <div className="bg-green-100 text-green-600 rounded-xl p-4 text-sm">
+                  <span className="font-bold">✅ Notifications Enabled!</span>
+                  <p className="mt-1">You'll get reminders at the times you set below.</p>
+                </div>
+              ) : notificationPermission === "denied" ? (
+                <div className="bg-red-100 text-red-600 rounded-xl p-4 text-sm">
+                  <span className="font-bold">🚫 Notifications Blocked</span>
+                  <p className="mt-1">Please enable notifications in your browser settings to get reminders.</p>
+                </div>
+              ) : (
+                <button
+                  onClick={requestNotificationPermission}
+                  className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl px-4 py-4 font-bold hover:from-pink-600 hover:to-purple-600 transition-all"
+                >
+                  🔔 Enable Notifications
+                </button>
+              )}
+            </div>
+
+            {/* Add Reminder Time */}
+            {notificationPermission === "granted" && (
+              <>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-600 mb-2">Add reminder time:</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="time"
+                      value={newReminderTime}
+                      onChange={e => setNewReminderTime(e.target.value)}
+                      className="flex-1 px-4 py-3 rounded-xl border-2 border-pink-300 focus:border-pink-400 focus:outline-none text-lg"
+                    />
+                    <button
+                      onClick={addReminderTime}
+                      className="px-6 py-3 bg-pink-500 text-white rounded-xl font-bold hover:bg-pink-600 transition-colors"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+
+                {/* Reminder Times List */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-600">Your reminders:</label>
+                  {reminderTimes.length === 0 ? (
+                    <p className="text-gray-400 text-sm py-4 text-center">No reminders set yet. Add one above! ⏰</p>
+                  ) : (
+                    reminderTimes.map(time => (
+                      <div key={time} className="flex items-center justify-between bg-pink-50 rounded-xl px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">⏰</span>
+                          <span className="font-bold text-gray-700 text-lg">{time}</span>
+                        </div>
+                        <button
+                          onClick={() => removeReminderTime(time)}
+                          className="text-red-400 hover:text-red-600 text-xl"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Tips */}
+                <div className="mt-6 bg-purple-50 rounded-xl p-4 text-sm text-purple-600">
+                  <p className="font-bold mb-1">💡 Tips:</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li>Keep this tab open for notifications to work</li>
+                    <li>On iPhone, add this site to Home Screen for best results</li>
+                    <li>Set reminders for your usual medication times</li>
+                  </ul>
+                </div>
+              </>
+            )}
+
+            <button
+              onClick={() => setShowNotificationSettings(false)}
+              className="mt-6 w-full py-3 bg-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-300 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* SpongeBob in right corner */}
       <SpongeBob3D />
